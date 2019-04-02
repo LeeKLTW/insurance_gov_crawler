@@ -1,0 +1,4 @@
+.idea/
+venv/
+phantomjs/
+__pycache__/
