@@ -2,3 +2,4 @@
 venv/
 phantomjs/
 __pycache__/
+.log
