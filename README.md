@@ -49,22 +49,16 @@ pip install -r requirements.txt
 
 
 2
-Use Headless Browser PhantomJS, you can download it here:
-http://phantomjs.org/download.html
+Use chromedriver, you can download it here:
+http://chromedriver.chromium.org/
 
-Name the directory phantomjs/
+Name it chromedriver
 
 ```
 ├── README.md
 ├── crawler.py
 ├── easy_intro.py
-├── phantomjs
-│   ├── ChangeLog
-│   ├── LICENSE.BSD
-│   ├── README.md
-│   ├── bin
-│   ├── examples
-│   └── third-party.txt
+├── chromedriver
 ├── requirements.txt
 └── venv
 ```
