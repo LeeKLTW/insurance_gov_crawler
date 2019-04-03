@@ -3,3 +3,6 @@ venv/
 phantomjs/
 __pycache__/
 *.log
+*.db  #sqlite
+models.py
+chromedriver
