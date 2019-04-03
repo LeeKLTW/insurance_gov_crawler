@@ -46,5 +46,3 @@ for i in range(len(candidates) - 2):
         product_code_list.append(candidates[i].text)
     elif i % 2 == 1:
         product_name_list.append(candidates[i].text)
-
-# 承保範圍, 不保事項, 保單紅利,拒保職業,理賠申請文件
