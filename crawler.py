@@ -66,6 +66,8 @@ for company in ComapnyName.options[1:]:
         '#CONTENT > table > tbody > tr > td > table:nth-child(12) > tbody > tr > td > a').click()
 
     next_page = crawl_company_product()
+
+    # get href if there exist href in next page tag
     while next_page:
         next_page = PREFIX + next_page
         driver.get(next_page)
