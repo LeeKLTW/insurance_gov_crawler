@@ -21,5 +21,3 @@ def _create_table_insurance_product(cur):
     PRIMARY KEY (product_id));""")
     return
 
-
-
