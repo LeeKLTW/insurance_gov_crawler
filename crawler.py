@@ -61,7 +61,6 @@ def iter_products(company):
         rejection_visible = [i.text for i in term_opt.options if '職業' in i.text][0]
         claim_app_doc_visible = [i.text for i in term_opt.options if '文件' in i.text][0]
 
-
         def _call_back():
             driver.get(product_page_url)
             driver.find_element_by_css_selector(
@@ -89,53 +88,54 @@ def iter_products(company):
         p.exception = '/'.join(exception_li)
         p.exception_brief = '/'.join(exception_b_li)
 
-
         term_opt = _call_back()
         term_opt.select_by_visible_text(dividend_visible)
         html_source = driver.page_source
         soup = BeautifulSoup(html_source, 'html.parser')
         dividend_li = [i.text.replace(' ', '').replace('\n', '') for i in
-                        soup.select("#contentbox > table > tbody > tr > td:nth-child(2)")][3:]
+                       soup.select("#contentbox > table > tbody > tr > td:nth-child(2)")][3:]
         p.dividend = '/'.join(dividend_li)
-
 
         term_opt = _call_back()
         term_opt.select_by_visible_text(rejection_visible)
         html_source = driver.page_source
         soup = BeautifulSoup(html_source, 'html.parser')
-        li1 = [i.text.replace(' ', '').replace('\n', '') for i in soup.select("#contentbox > div > table > tbody > tr > td:nth-child(1)")][3:]
-        li2 = [i.text.replace(' ', '').replace('\n', '') for i in soup.select("#contentbox > div > table > tbody > tr > td:nth-child(2)")][3:]
+        li1 = [i.text.replace(' ', '').replace('\n', '') for i in
+               soup.select("#contentbox > div > table > tbody > tr > td:nth-child(1)")][3:]
+        li2 = [i.text.replace(' ', '').replace('\n', '') for i in
+               soup.select("#contentbox > div > table > tbody > tr > td:nth-child(2)")][3:]
         rejection_li = []
-        for i,j in zip(li1,li2):
-            rejection_li.append(str(i)+": "+str(j))
+        for i, j in zip(li1, li2):
+            rejection_li.append(str(i) + ": " + str(j))
         p.rejection = '/'.join(rejection_li)
-
 
         term_opt = _call_back()
         term_opt.select_by_visible_text(claim_app_doc_visible)
         html_source = driver.page_source
         soup = BeautifulSoup(html_source, 'html.parser')
-        li1 = [i.text.replace(' ', '').replace('\n', '') for i in soup.select("#contentbox > div > table > tbody > tr > td:nth-child(1)")][3:]
-        li2 = [i.text.replace(' ', '').replace('\n', '') for i in soup.select("#contentbox > div > table > tbody > tr > td:nth-child(2)")][3:]
+        li1 = [i.text.replace(' ', '').replace('\n', '') for i in
+               soup.select("#contentbox > div > table > tbody > tr > td:nth-child(1)")][3:]
+        li2 = [i.text.replace(' ', '').replace('\n', '') for i in
+               soup.select("#contentbox > div > table > tbody > tr > td:nth-child(2)")][3:]
         claim_app_doc_li = []
-        for i,j in zip(li1,li2):
-            claim_app_doc_li.append(str(i)+": "+str(j))
+        for i, j in zip(li1, li2):
+            claim_app_doc_li.append(str(i) + ": " + str(j))
         p.claim_app_doc = '/'.join(rejection_li)
 
-
         sql = """
-        INSERT INTO insurance_product (product_id,product_name,company)
-        SELECT ?,?,?
+        INSERT INTO insurance_product (product_id,product_name,company,coverage_brief,coverage,exception,exception_brief,dividend,rejection,claim_app_doc)
+        SELECT ?,?,?,?,?,?,?,?,?,?
         WHERE NOT EXISTS(SELECT * FROM insurance_product WHERE product_id=?);
         """
 
         conn, cur = conn_sqlite()
-        cur.execute(sql, (p.product_id, p.product_name, p.company, p.product_id))
+        cur.execute(sql, (
+        p.product_id, p.product_name, p.company, p.coverage_brief, p.coverage, p.exception, p.exception_brief,
+        p.dividend, p.rejection, p.claim_app_doc, p.product_id))
         conn.commit()
 
     for i in range(2, len(candidates) - 2, 2):
         _write_product_detail(i)
-
 
     next_page = soup.select(
         "#contentbox > table > tbody > tr:nth-child(3) > td > table > tbody > tr:nth-child(1) > td:nth-child(3) a")[
