@@ -4,6 +4,7 @@ from selenium.webdriver.support.ui import Select
 from bs4 import BeautifulSoup
 from models import conn_mysql
 import logging
+import json
 
 logging.basicConfig(level=logging.INFO,
                     format="[%(levelname)-8s] - %(asctime)s - PID %(process)d - %(message)s")
@@ -94,9 +95,9 @@ def iter_products(company):
                               "#contentbox > div > table:nth-child(8) > tbody > tr > td:nth-child(1)")][
                          1:]
 
-        p = InsuranceProduct(product_id='202391RZ9DGE021A11Z10000007',
-                             product_name='台灣人壽一年期二至十一級失能健康保險附約',
-                             company=company)
+        # p = InsuranceProduct(product_id='202391RZ9DGE021A11Z10000007',
+        #                      product_name='台灣人壽一年期二至十一級失能健康保險附約',
+        #                      company=company)
 
         p.coverage = '/'.join(coverage_li)
         p.coverage_brief = '/'.join(coverage_b_li)
@@ -135,22 +136,51 @@ def iter_products(company):
         claim_app_doc_li = []
         for i, j in zip(li1, li2):
             claim_app_doc_li.append(str(i) + ": " + str(j))
-        p.claim_app_doc = '/'.join(rejection_li)
+        p.claim_app_doc = '/'.join(claim_app_doc_li)
 
-        sql = """
-        INSERT INTO insurance_product 
-        (product_id,product_name,company,coverage_brief,coverage,exception,exception_brief,dividend,rejection,claim_app_doc)
-        SELECT ?,?,?,?,?,?,?,?,?,?
-        WHERE NOT EXISTS(SELECT * FROM insurance_product WHERE product_id=?);
-        """
+        # sql = """
+        # INSERT INTO insurance_product
+        # (product_id,product_name,company,coverage_brief,coverage,exception,exception_brief,dividend,rejection,claim_app_doc)
+        # VALUES(?,?,?,?,?,?,?,?,?,?)
+        # """
 
-        conn, cur = conn_mysql()
-        cur.execute(sql, (
-            p.product_id, p.product_name, p.company, p.coverage_brief, p.coverage, p.exception,
-            p.exception_brief,
-            p.dividend, p.rejection, p.claim_app_doc, p.product_id))
-        conn.commit()
-        conn.close()
+        # sql = f"""
+        # INSERT INTO insurance_product
+        # (product_id,product_name,company,coverage_brief,coverage,exception,exception_brief,dividend,rejection,claim_app_doc)
+        # VALUES({p.product_id},{p.product_name},{p.company},{p.coverage_brief},{p.coverage},{p.exception},{p.exception_brief},'本商品為不分紅保險單',{p.rejection},{p.claim_app_doc})
+        # """
+        # conn, cur = conn_mysql()
+        # cur.execute(sql)
+        # p.product_name.encode('utf-8')
+        # sql = """
+        # INSERT INTO insurance_product
+        # (product_id,product_name,company,coverage_brief,coverage,exception,exception_brief,dividend,rejection,claim_app_doc)
+        # VALUES(?,?,?,?,?,?,?,?,?,?)
+        # ON DUPLICATE KEY UPDATE
+        # coverage_brief = ?,coverage = ?,exception=?,exception_brief=?,dividend=?,rejection=?,claim_app_doc=?
+        # """
+        #
+        # conn, cur = conn_mysql()
+        # cur.execute(sql, (
+        #     p.product_id, p.product_name, p.company, p.coverage_brief, p.coverage, p.exception,
+        #     p.exception_brief,p.dividend, p.rejection, p.claim_app_doc))
+        #
+        # cur.execute(sql, (
+        #     p.product_id, p.product_name, p.company, p.coverage_brief, p.coverage, p.exception,
+        #     p.exception_brief,p.dividend, p.rejection, p.claim_app_doc,
+        #     p.coverage_brief, p.coverage, p.exception,
+        #     p.exception_brief,p.dividend, p.rejection, p.claim_app_doc))
+        # conn.commit()
+        # conn.close()
+        with open('product.json','a') as f:
+            f.write(json.dumps(p.__dict__))
+            f.write('\n')
+        #
+        # with open('product.json','r') as f:
+        #     s = f.readlines()
+        # json.loads(s[1])
+        # json.loads(json.dumps(p.__dict__))
+
 
     for i in range(2, len(candidates) - 2, 2):
         _write_product_detail(i)
