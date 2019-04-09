@@ -2,7 +2,7 @@
 from selenium import webdriver
 from selenium.webdriver.support.ui import Select
 from bs4 import BeautifulSoup
-from models import conn_sqlite
+from models import conn_mysql
 import logging
 
 logging.basicConfig(level=logging.INFO, format="[%(levelname)-8s] - %(asctime)s - PID %(process)d - %(message)s")
@@ -128,11 +128,12 @@ def iter_products(company):
         WHERE NOT EXISTS(SELECT * FROM insurance_product WHERE product_id=?);
         """
 
-        conn, cur = conn_sqlite()
+        conn, cur = conn_mysql()
         cur.execute(sql, (
         p.product_id, p.product_name, p.company, p.coverage_brief, p.coverage, p.exception, p.exception_brief,
         p.dividend, p.rejection, p.claim_app_doc, p.product_id))
         conn.commit()
+        conn.close()
 
     for i in range(2, len(candidates) - 2, 2):
         _write_product_detail(i)
