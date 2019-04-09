@@ -6,3 +6,5 @@ __pycache__/
 *.db  #sqlite
 models.py
 chromedriver
+acc.json
+acc.py
