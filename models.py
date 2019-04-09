@@ -35,3 +35,4 @@ def _create_table_insurance_product(cur):
     claim_app_doc  TEXT,
     PRIMARY KEY (product_id));""")
     return
+
