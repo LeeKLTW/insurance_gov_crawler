@@ -201,7 +201,10 @@ def main(start,end,step):
     ComapnyName = Select(driver.find_element_by_id("ctl00_MainContent_ddlComapnyName"))
     companys_list = [c.text for c in ComapnyName.options[1:]]
 
-    # for company in companys_list[-4:2:-1]:
+    # for company in companys_list[-12:-13:-1]:
+    # for company in companys_list[-21:-23:-1]:
+    # for company in companys_list[-23:-25:-1]:
+    # for company in companys_list[-25:-27:-1]:
     for company in companys_list[start:end:step]:
         try:
             clist_to_ppage(company)
