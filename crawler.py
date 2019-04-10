@@ -4,7 +4,6 @@ from selenium.webdriver.support.ui import Select
 from bs4 import BeautifulSoup
 from models import conn_mysql
 import logging
-import json
 
 logging.basicConfig(level=logging.INFO,
                     format="[%(levelname)-8s] - %(asctime)s - PID %(process)d - %(message)s")
@@ -50,10 +49,18 @@ def iter_products(company):
 
     html_source = driver.page_source
     soup = BeautifulSoup(html_source, 'html.parser')
-    candidates = soup.select('tbody > tr > td:nth-child(1) span')
+    candidates = [i.text.replace(' ', '').replace('\n', '') for i in
+                  soup.select('tbody > tr > td:nth-child(1) span')]
     product_page_url = driver.current_url
 
     def _write_product_detail(i):
+        def _call_back():
+            driver.get(product_page_url)
+            driver.find_element_by_css_selector(
+                '#contentbox > div.title > table > tbody > tr > td > table > tbody > tr > th > center > input').click()
+            term_opt = Select(driver.find_element_by_css_selector(idx_html))
+            return term_opt
+
         p = InsuranceProduct(product_id=candidates[i - 1], product_name=candidates[i],
                              company=company)
 
@@ -64,13 +71,6 @@ def iter_products(company):
         dividend_visible = [i.text for i in term_opt.options if '紅利' in i.text][0]
         rejection_visible = [i.text for i in term_opt.options if '職業' in i.text][0]
         claim_app_doc_visible = [i.text for i in term_opt.options if '文件' in i.text][0]
-
-        def _call_back():
-            driver.get(product_page_url)
-            driver.find_element_by_css_selector(
-                '#contentbox > div.title > table > tbody > tr > td > table > tbody > tr > th > center > input').click()
-            term_opt = Select(driver.find_element_by_css_selector(idx_html))
-            return term_opt
 
         term_opt = _call_back()
         term_opt.select_by_visible_text(coverage_visible)
@@ -138,53 +138,28 @@ def iter_products(company):
             claim_app_doc_li.append(str(i) + ": " + str(j))
         p.claim_app_doc = '/'.join(claim_app_doc_li)
 
-        # sql = """
-        # INSERT INTO insurance_product
-        # (product_id,product_name,company,coverage_brief,coverage,exception,exception_brief,dividend,rejection,claim_app_doc)
-        # VALUES(?,?,?,?,?,?,?,?,?,?)
-        # """
+        print(p.__dict__)
 
-        # sql = f"""
-        # INSERT INTO insurance_product
-        # (product_id,product_name,company,coverage_brief,coverage,exception,exception_brief,dividend,rejection,claim_app_doc)
-        # VALUES({p.product_id},{p.product_name},{p.company},{p.coverage_brief},{p.coverage},{p.exception},{p.exception_brief},'本商品為不分紅保險單',{p.rejection},{p.claim_app_doc})
-        # """
-        # conn, cur = conn_mysql()
-        # cur.execute(sql)
-        # p.product_name.encode('utf-8')
-        # sql = """
-        # INSERT INTO insurance_product
-        # (product_id,product_name,company,coverage_brief,coverage,exception,exception_brief,dividend,rejection,claim_app_doc)
-        # VALUES(?,?,?,?,?,?,?,?,?,?)
-        # ON DUPLICATE KEY UPDATE
-        # coverage_brief = ?,coverage = ?,exception=?,exception_brief=?,dividend=?,rejection=?,claim_app_doc=?
-        # """
-        #
-        # conn, cur = conn_mysql()
-        # cur.execute(sql, (
-        #     p.product_id, p.product_name, p.company, p.coverage_brief, p.coverage, p.exception,
-        #     p.exception_brief,p.dividend, p.rejection, p.claim_app_doc))
-        #
-        # cur.execute(sql, (
-        #     p.product_id, p.product_name, p.company, p.coverage_brief, p.coverage, p.exception,
-        #     p.exception_brief,p.dividend, p.rejection, p.claim_app_doc,
-        #     p.coverage_brief, p.coverage, p.exception,
-        #     p.exception_brief,p.dividend, p.rejection, p.claim_app_doc))
-        # conn.commit()
-        # conn.close()
-        with open('product.json','a') as f:
-            f.write(json.dumps(p.__dict__))
-            f.write('\n')
-        #
-        # with open('product.json','r') as f:
-        #     s = f.readlines()
-        # json.loads(s[1])
-        # json.loads(json.dumps(p.__dict__))
-
+        sql = f"""
+        INSERT INTO insurance_product
+        (product_id,product_name,company,coverage_brief,coverage,exception,exception_brief,dividend,rejection,claim_app_doc)
+        VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)
+        ON DUPLICATE KEY UPDATE product_name = %s,company = %s,coverage_brief = %s,coverage = %s,exception = %s,exception_brief = %s,dividend = %s,rejection = %s,claim_app_doc = %s;
+        """
+        conn, cur = conn_mysql()
+        cur.execute(sql, (
+        p.product_id, p.product_name, p.company, p.coverage_brief, p.coverage, p.exception,
+        p.exception_brief, p.dividend, p.rejection, p.claim_app_doc,p.product_name, p.company, p.coverage_brief, p.coverage, p.exception,
+        p.exception_brief, p.dividend, p.rejection, p.claim_app_doc))
+        conn.commit()
+        conn.close()
+        term_opt = _call_back()
 
     for i in range(2, len(candidates) - 2, 2):
-        _write_product_detail(i)
-
+        try:
+            _write_product_detail(i)
+        except: #停售保單
+            pass
     next_page = soup.select(
         "#contentbox > table > tbody > tr:nth-child(3) > td > table > tbody > tr:nth-child(1) > td:nth-child(3) a")[
         0].get('href')
@@ -217,6 +192,7 @@ def main():
             iter_products(company)
         except:
             print('Cannot get', company)  # e.g. '國華人壽保險股份有限公司'
+            continue
 
     driver.close()
 
