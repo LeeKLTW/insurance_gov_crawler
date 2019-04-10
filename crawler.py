@@ -201,7 +201,8 @@ def main(start,end,step):
     ComapnyName = Select(driver.find_element_by_id("ctl00_MainContent_ddlComapnyName"))
     companys_list = [c.text for c in ComapnyName.options[1:]]
 
-    for company in companys_list:
+    # for company in companys_list[-4:2:-1]:
+    for company in companys_list[start:end:step]:
         try:
             clist_to_ppage(company)
             iter_products(company)
@@ -212,4 +213,11 @@ def main(start,end,step):
     driver.close()
 
 if __name__ == '__main__':
-    main()
+    from argparse import ArgumentParser
+    parser = ArgumentParser()
+    parser.add_argument("-s",dest="start",type=int)
+    parser.add_argument("-e",dest="end",type=int)
+    parser.add_argument("-t",dest="step",type=int)
+    args, unparsed = parser.parse_known_args()
+
+    main(args.start,args.end,args.step)
