@@ -61,6 +61,13 @@ def iter_products(company):
             term_opt = Select(driver.find_element_by_css_selector(idx_html))
             return term_opt
 
+        def _click_opt(opt):
+            print(opt)
+            try:
+                term_opt.select_by_visible_text(opt)
+            except:  # {Alert text : 查無商品資料!!}
+                _call_back()
+
         p = InsuranceProduct(product_id=candidates[i - 1], product_name=candidates[i],
                              company=company)
 
@@ -73,7 +80,7 @@ def iter_products(company):
         claim_app_doc_visible = [i.text for i in term_opt.options if '文件' in i.text][0]
 
         term_opt = _call_back()
-        term_opt.select_by_visible_text(coverage_visible)
+        _click_opt(coverage_visible)
 
         html_source = driver.page_source
         soup = BeautifulSoup(html_source, 'html.parser')
@@ -105,7 +112,8 @@ def iter_products(company):
         p.exception_brief = '/'.join(exception_b_li)
 
         term_opt = _call_back()
-        term_opt.select_by_visible_text(dividend_visible)
+        _click_opt(dividend_visible)
+
         html_source = driver.page_source
         soup = BeautifulSoup(html_source, 'html.parser')
         dividend_li = [i.text.replace(' ', '').replace('\n', '') for i in
@@ -113,7 +121,8 @@ def iter_products(company):
         p.dividend = '/'.join(dividend_li)
 
         term_opt = _call_back()
-        term_opt.select_by_visible_text(rejection_visible)
+        _click_opt(rejection_visible)
+
         html_source = driver.page_source
         soup = BeautifulSoup(html_source, 'html.parser')
         li1 = [i.text.replace(' ', '').replace('\n', '') for i in
@@ -126,7 +135,8 @@ def iter_products(company):
         p.rejection = '/'.join(rejection_li)
 
         term_opt = _call_back()
-        term_opt.select_by_visible_text(claim_app_doc_visible)
+        _click_opt(claim_app_doc_visible)
+
         html_source = driver.page_source
         soup = BeautifulSoup(html_source, 'html.parser')
         li1 = [i.text.replace(' ', '').replace('\n', '') for i in
@@ -138,21 +148,26 @@ def iter_products(company):
             claim_app_doc_li.append(str(i) + ": " + str(j))
         p.claim_app_doc = '/'.join(claim_app_doc_li)
 
-        print(p.__dict__)
+        logging.info(f'GET {p.company}  {p.product_id}  {p.product_name}')
 
-        sql = f"""
-        INSERT INTO insurance_product
-        (product_id,product_name,company,coverage_brief,coverage,exception,exception_brief,dividend,rejection,claim_app_doc)
-        VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)
-        ON DUPLICATE KEY UPDATE product_name = %s,company = %s,coverage_brief = %s,coverage = %s,exception = %s,exception_brief = %s,dividend = %s,rejection = %s,claim_app_doc = %s;
-        """
-        conn, cur = conn_mysql()
-        cur.execute(sql, (
-        p.product_id, p.product_name, p.company, p.coverage_brief, p.coverage, p.exception,
-        p.exception_brief, p.dividend, p.rejection, p.claim_app_doc,p.product_name, p.company, p.coverage_brief, p.coverage, p.exception,
-        p.exception_brief, p.dividend, p.rejection, p.claim_app_doc))
-        conn.commit()
-        conn.close()
+        try:
+
+            sql = f"""
+            INSERT INTO insurance_product
+            (product_id,product_name,company,coverage_brief,coverage,exception,exception_brief,dividend,rejection,claim_app_doc)
+            VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)
+            ON DUPLICATE KEY UPDATE product_name = %s,company = %s,coverage_brief = %s,coverage = %s,exception = %s,exception_brief = %s,dividend = %s,rejection = %s,claim_app_doc = %s;
+            """
+            conn, cur = conn_mysql()
+            cur.execute(sql, (
+            p.product_id, p.product_name, p.company, p.coverage_brief, p.coverage, p.exception,
+            p.exception_brief, p.dividend, p.rejection, p.claim_app_doc,p.product_name, p.company, p.coverage_brief, p.coverage, p.exception,
+            p.exception_brief, p.dividend, p.rejection, p.claim_app_doc))
+            conn.commit()
+            conn.close()
+        except:
+            pass
+
         term_opt = _call_back()
 
     for i in range(2, len(candidates) - 2, 2):
@@ -173,7 +188,7 @@ def iter_products(company):
     return
 
 
-def main():
+def main(start,end,step):
     global driver
     global life_insurance
     driver = webdriver.Chrome('./chromedriver')
@@ -195,7 +210,6 @@ def main():
             continue
 
     driver.close()
-
 
 if __name__ == '__main__':
     main()
